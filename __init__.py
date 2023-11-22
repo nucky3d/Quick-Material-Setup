@@ -7,8 +7,7 @@ bl_info = {
     "author": "Nucky3d",
     "version": (1, 0),
     "support": "COMMUNITY",
-    "wiki_url": "",
-    "tracker_url": "",
+    "wiki_url": "https://github.com/nucky3d/Quick-Material-Setup-",
 }
 
 from tokenize import group
@@ -25,22 +24,44 @@ from bpy.types import (
 )
 
 # Settings
-class OBJECT_OT_addon_prefs_example(Operator):
-    bl_idname = "object.addon_prefs_example"
-    bl_label = "Add-on Preferences Example"
-    bl_options = {'REGISTER', 'UNDO'}
+class ExampleAddonPreferences(bpy.types.AddonPreferences):
+    # this must match the add-on name, use '__package__'
+    # when defining this in a submodule of a python package.
+    bl_idname = __name__
+    # prefixes_suffixes: bpy.props.PointerProperty(type=FastMaterialsPreferences)
 
-    def execute(self, context):
-        preferences = context.preferences
-        addon_prefs = preferences.addons[__name__].preferences
+    prefix: bpy.props.StringProperty(
+    default="T_", 
+    description='"T_"YourTexture'
+    )
+    presets_p: bpy.props.StringProperty(
+    default="UnrealEnginePreset_ORM UnrealEnginePreset_RMA", 
+    description='"T_"YourTexture'
+    )
 
-        info = ("Path: %s, Number: %d, Boolean %r" %
-                (addon_prefs.filepath, addon_prefs.number, addon_prefs.boolean))
-
-        self.report({'INFO'}, info)
-        print(info)
-
-        return {'FINISHED'}
+    sufix_bc: bpy.props.StringProperty(
+    default="_BC  _BaseColor _Albedo",
+    description='YourTexture"_BC"' 
+    )
+    sufix_pack: bpy.props.StringProperty(
+    default="_ORM  _RMA",
+    )
+    sufix_n: bpy.props.StringProperty(
+    default="_N  _Normal",
+    )
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row()
+        row.prop(self, "presets_p", text="List of preset from blend file")
+        row = layout.row()
+        row.prop(self, "prefix", text="Prefix for textures")
+        row = layout.row()
+        row.prop(self, "sufix_bc", text="Sufix for color textures")
+        row = layout.row()
+        row.prop(self, "sufix_pack", text="Sufix for packed textures")
+        row = layout.row()
+        row.prop(self, "sufix_n", text="Sufix for normal textures")
+        row.separator()
 
 class FastMaterialsPreferences(bpy.types.PropertyGroup):
     texture_prefixes: StringProperty(
@@ -58,59 +79,54 @@ class FastMaterialsPreferences(bpy.types.PropertyGroup):
         texture_pref = tags.texture_prefixes.split(' ')
         texture_suf = tags.texture_suffixes.split(' ')
 # varibles
-
-extension = '.tga'
 texture_basecolor_path = ' '
 texture_basecolor_name = ' '
-
+preset_name = "UnrealEnginePreset"
 # material presets path
 rootdir = os.path.dirname(os.path.realpath(__file__))
 material_presets_path = rootdir.replace("'\'", "'/'") + "/material_presets.blend\\Material\\"
 
-prefix = "T_"
-tex_basecolor_suf = ['_BC', '_Albedo', '_BaseColor']
-tex_packed_suf = ['_ORM', '_ARM', '_MRA' '_RMA' '_OMR']
-tex_normal_suf = ['_N', '_Normal']
 
-filename_ext = '_BC.tga'
-filter_glob: StringProperty(
-    default='_BC*.tga',
-    # options={'HIDDEN'}
-)
+# OLD
+# class select_texture_file(Operator, ImportHelper):
+#     bl_idname = 'object.select_file'
+#     bl_label = 'Select Base Color'
+#     bl_options = {'PRESET', 'UNDO'}
+#     # filename_ext = '.tga'
+#     filter_glob: StringProperty(
+#         default='*_BC*',
+#         options={'HIDDEN'}
+#     )
+#     def execute(self, context):
+#         print('imported file: ', self.filepath)
+#         global texture_basecolor_path
+#         global texture_basecolor_name
+#         global extension
+#         extension = extension
+#         texture_basecolor_path = self.filepath
+#         texture_basecolor_name = os.path.basename(self.filepath)
+#         global prefix
+#         suffix = ['_BC', 'ORM', '_N', '.tga']
+#         texture_basecolor_name = texture_basecolor_name.removeprefix(prefix)
+#         for i in range(len(suffix)):
+#             texture_basecolor_name = texture_basecolor_name.removesuffix(suffix[i-1])
+#         print(texture_basecolor_name)
+#         return {'FINISHED'}
+# OLD end
 
-class select_texture_file(Operator, ImportHelper):
-    bl_idname = 'object.select_file'
-    bl_label = 'Select Base Color'
-    bl_options = {'PRESET', 'UNDO'}
-    filename_ext = '.tga'
-    filter_glob: StringProperty(
-        default='*_BC.tga',
-        options={'HIDDEN'}
-    )
-    def execute(self, context):
-        print('imported file: ', self.filepath)
-        global texture_basecolor_path
-        global texture_basecolor_name
-        global extension
-        extension = extension
-        texture_basecolor_path = self.filepath
-        texture_basecolor_name = os.path.basename(self.filepath)
-        global prefix
-        suffix = ['_BC', 'ORM', '_N', '.tga']
-        texture_basecolor_name = texture_basecolor_name.removeprefix(prefix)
-        for i in range(len(suffix)):
-            texture_basecolor_name = texture_basecolor_name.removesuffix(suffix[i-1])
-        print(texture_basecolor_name)
-        return {'FINISHED'}
+
 class SetupMaterialOperator(bpy.types.Operator):
     bl_idname = "object.setup_fast_material_operator"
     bl_label = "Setup Material"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        
-        preset_name = "UnrealEnginePreset"
-
+        # vars from preferences
+        global preset_name
+        tex_basecolor_suf = (context.preferences.addons[__name__].preferences.sufix_bc).split()
+        tex_packed_suf = (context.preferences.addons[__name__].preferences.sufix_pack).split()
+        tex_normal_suf = (context.preferences.addons[__name__].preferences.sufix_n).split()
+        prefix = (context.preferences.addons[__name__].preferences.prefix)
         # Delete preset material before naming
         for material in bpy.data.materials:
             if material.name == preset_name:
@@ -130,16 +146,20 @@ class SetupMaterialOperator(bpy.types.Operator):
         # Import texture and give material name as texture name wiout prefix
         global texture_basecolor_path
         global texture_basecolor_name
-        global tex_basecolor_suf
-        global tex_normal_suf
-        global tex_packed_suf
-        prefix_fix = '\T_'
+        prefix_fix = '\\' + prefix
         mat.name = "M_" + texture_basecolor_name
+        exstensions = ['.tga', '.png', '.jpg', '.tif', '.tiff', '.exr']
+        for i in range(len(exstensions)):
+                if exstensions[i] in texture_basecolor_path:
+                    extension = exstensions[i]
+                else:
+                    pass
         for sufix in tex_basecolor_suf:
             try:
                 new_img = bpy.data.images.load(filepath = os.path.dirname(texture_basecolor_path) + prefix_fix + texture_basecolor_name + sufix + extension)
                 obj.material_slots[0].material.node_tree.nodes["BaseColor"].image = new_img
             except:
+                # print(os.path.dirname(texture_basecolor_path) + prefix_fix + texture_basecolor_name + sufix + extension)
                 pass              
         for sufix in tex_packed_suf:
             try:
@@ -150,6 +170,7 @@ class SetupMaterialOperator(bpy.types.Operator):
                 except:
                     obj.material_slots[0].material.node_tree.nodes["PackedTexture"].image.colorspace_settings.name='Utility - Raw'
             except:
+                # print(os.path.dirname(texture_basecolor_path) + prefix_fix + texture_basecolor_name + sufix + extension)
                 pass     
         for sufix in tex_normal_suf:
             try:
@@ -160,43 +181,71 @@ class SetupMaterialOperator(bpy.types.Operator):
                 except:
                     obj.material_slots[0].material.node_tree.nodes["Normal"].image.colorspace_settings.name='Utility - Raw'
             except:
+                # print(os.path.dirname(texture_basecolor_path) + prefix_fix + texture_basecolor_name + sufix + extension)
                 pass                           
         return {'FINISHED'}
+    
+
+
 class FastMaterialOperator(Operator, ImportHelper):
     bl_idname = "object.fast_material_operator"
     bl_label = "Quick Material"
     bl_options = {'REGISTER', 'UNDO'}
 
-    filename_ext = '.tga'
+    # filename_ext = '.tga'
     filter_glob: StringProperty(
-        default='*_BC.tga',
-        options={'HIDDEN'}
+        default='*_BC*',
+        # options={'HIDDEN'}
     )
     def execute(self, context):
         global texture_basecolor_path
-        print('imported file: ', self.filepath)
         global texture_basecolor_name
+        prefix = (context.preferences.addons[__name__].preferences.prefix)
+        tex_basecolor_suf = (context.preferences.addons[__name__].preferences.sufix_bc).split()
+        
+        print('imported file: ', self.filepath)
         texture_basecolor_path = self.filepath
-        texture_basecolor_name = os.path.basename(self.filepath)
+        texture_basecolor_name = bpy.path.basename(self.filepath)
 
-        prefix = "T_"
-        suffix = ['_BC', 'ORM', '_N', '.tga']
+        suffix = ['.tga', '.png', '.jpg', '.tif', '.tiff', '.exr'] + tex_basecolor_suf
         texture_basecolor_name = texture_basecolor_name.removeprefix(prefix)
         for i in range(len(suffix)):
             texture_basecolor_name = texture_basecolor_name.removesuffix(suffix[i-1])
         print(texture_basecolor_name)
         bpy.ops.object.setup_fast_material_operator('INVOKE_DEFAULT') 
         return {'FINISHED'}
+    
+
+# class MT_PresetsMenu(bpy.types.Menu):
+#     bl_idname = "presets.menu"
+#     bl_label = "Presets"
+
+#     # Drawing a nested menu with three operators(buttons)
+#     def draw(self, context):
+#         layout = self.layout
+#         global preset_name
+#         presets = (context.preferences.addons[__name__].preferences.presets).split()
+#         preset_name = presets[0]
+#         # for i in range(len(presets)):
+#         #     layout.('bpy.ops.mesh.primitive_cube_add', text=preset_name[i-1])
+#         #     print(preset_name[i-1])
+        
+
+
 class FastMaterialsPanel(bpy.types.Panel):
     bl_label = "Fast Materials"
     bl_idname = "MATERIAL_PT_fastmaterials"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = 'FM'
+    bl_category = 'QMS'
 
     def draw(self, context):
+        global preset_name
+        presets = (context.preferences.addons[__name__].preferences.presets_p).split()
+        preset_name = presets[0]
         layout = self.layout  # Use layout directly, not self.layout
         layout.operator("object.fast_material_operator")
+        # layout.menu('presets.menu', text='Presets')
         # layout.operator("object.select_file")
         # layout.operator("object.setup_fast_material_operator")
         obj = context.active_object
@@ -228,35 +277,11 @@ class FastMaterialsPanel(bpy.types.Panel):
                 box.prop(input,"default_value",text=input.name)
 
 
-
-# Settings End
-class ExampleAddonPreferences(bpy.types.AddonPreferences):
-    # this must match the add-on name, use '__package__'
-    # when defining this in a submodule of a python package.
-    bl_idname = __name__
-    # prefixes_suffixes: bpy.props.PointerProperty(type=FastMaterialsPreferences)
-    def draw(self, context):
-        # tags = self.prefixes_suffixes
-        layout = self.layout
-        col = layout.column()
-
-        box = layout.box()
-        col = box.column(align=True)
-
-        # col.prop(tags, "base_color")
-        # col.prop(tags, "sss_color")
-
-        box = layout.box()
-        col = box.column(align=True)
-
-
 classes = (
     SetupMaterialOperator,
     FastMaterialsPanel,
     FastMaterialOperator,
-    select_texture_file,
     ExampleAddonPreferences,
-    OBJECT_OT_addon_prefs_example,
     FastMaterialsPreferences,
 )
 
