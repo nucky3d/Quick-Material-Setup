@@ -5,7 +5,7 @@ bl_info = {
     "location": "Properties > Material",
     "description": "Quickly import textures as materials",
     "author": "Nucky3d",
-    "version": (1, 0),
+    "version": (1, 2),
     "support": "COMMUNITY",
     "wiki_url": "https://github.com/nucky3d/Quick-Material-Setup-",
 }
@@ -52,8 +52,8 @@ class ExampleAddonPreferences(bpy.types.AddonPreferences):
     def draw(self, context):
         layout = self.layout
         row = layout.row()
-        row.prop(self, "presets_p", text="List of preset from blend file")
-        row = layout.row()
+        # row.prop(self, "presets_p", text="List of preset from blend file")
+        # row = layout.row()
         row.prop(self, "prefix", text="Prefix for textures")
         row = layout.row()
         row.prop(self, "sufix_bc", text="Sufix for color textures")
@@ -81,39 +81,11 @@ class FastMaterialsPreferences(bpy.types.PropertyGroup):
 # varibles
 texture_basecolor_path = ' '
 texture_basecolor_name = ' '
-preset_name = "UnrealEnginePreset"
+preset_name = "UnrealEnginePreset_ORM"
+preset_display_name = 'UE ORM'
 # material presets path
 rootdir = os.path.dirname(os.path.realpath(__file__))
 material_presets_path = rootdir.replace("'\'", "'/'") + "/material_presets.blend\\Material\\"
-
-
-# OLD
-# class select_texture_file(Operator, ImportHelper):
-#     bl_idname = 'object.select_file'
-#     bl_label = 'Select Base Color'
-#     bl_options = {'PRESET', 'UNDO'}
-#     # filename_ext = '.tga'
-#     filter_glob: StringProperty(
-#         default='*_BC*',
-#         options={'HIDDEN'}
-#     )
-#     def execute(self, context):
-#         print('imported file: ', self.filepath)
-#         global texture_basecolor_path
-#         global texture_basecolor_name
-#         global extension
-#         extension = extension
-#         texture_basecolor_path = self.filepath
-#         texture_basecolor_name = os.path.basename(self.filepath)
-#         global prefix
-#         suffix = ['_BC', 'ORM', '_N', '.tga']
-#         texture_basecolor_name = texture_basecolor_name.removeprefix(prefix)
-#         for i in range(len(suffix)):
-#             texture_basecolor_name = texture_basecolor_name.removesuffix(suffix[i-1])
-#         print(texture_basecolor_name)
-#         return {'FINISHED'}
-# OLD end
-
 
 class SetupMaterialOperator(bpy.types.Operator):
     bl_idname = "object.setup_fast_material_operator"
@@ -216,19 +188,41 @@ class FastMaterialOperator(Operator, ImportHelper):
         return {'FINISHED'}
     
 
-# class MT_PresetsMenu(bpy.types.Menu):
-#     bl_idname = "presets.menu"
-#     bl_label = "Presets"
 
-#     # Drawing a nested menu with three operators(buttons)
-#     def draw(self, context):
-#         layout = self.layout
-#         global preset_name
-#         presets = (context.preferences.addons[__name__].preferences.presets).split()
-#         preset_name = presets[0]
-#         # for i in range(len(presets)):
-#         #     layout.('bpy.ops.mesh.primitive_cube_add', text=preset_name[i-1])
-#         #     print(preset_name[i-1])
+
+class MT_Preset_UE_ORM(bpy.types.Operator):
+    bl_idname = "object.preset_ue_orm"
+    bl_label = "UE ORM"
+    bl_options = {'REGISTER', 'UNDO'}
+    def execute(self, context):
+        global preset_name
+        presets = (context.preferences.addons[__name__].preferences.presets_p).split()
+        preset_name = presets[0]
+        global preset_display_name
+        preset_display_name = 'UE ORM'
+        return {'FINISHED'}
+class MT_Preset_UE_RMA(bpy.types.Operator):
+    bl_idname = "object.preset_ue_rma"
+    bl_label = "UE RMA"
+    bl_options = {'REGISTER', 'UNDO'}
+    def execute(self, context):
+        global preset_name
+        presets = (context.preferences.addons[__name__].preferences.presets_p).split()
+        preset_name = presets[1]
+        global preset_display_name
+        preset_display_name = 'UE RMA'
+        return {'FINISHED'}
+
+class MT_PresetsMenu(bpy.types.Menu):
+    global preset_display_name
+    bl_label = "Presets"
+    bl_idname = "view3D.presets_menu"
+
+    # Drawing a nested menu with three operators(buttons)
+    def draw(self, context):
+        layout = self.layout 
+        layout.operator('object.preset_ue_orm')
+        layout.operator('object.preset_ue_rma')
         
 
 
@@ -240,12 +234,12 @@ class FastMaterialsPanel(bpy.types.Panel):
     bl_category = 'QMS'
 
     def draw(self, context):
-        global preset_name
-        presets = (context.preferences.addons[__name__].preferences.presets_p).split()
-        preset_name = presets[0]
+        # global preset_name
+        # presets = (context.preferences.addons[__name__].preferences.presets_p).split()
+        # preset_name = presets[0]
         layout = self.layout  # Use layout directly, not self.layout
         layout.operator("object.fast_material_operator")
-        # layout.menu('presets.menu', text='Presets')
+        layout.menu('view3D.presets_menu', text=preset_display_name)
         # layout.operator("object.select_file")
         # layout.operator("object.setup_fast_material_operator")
         obj = context.active_object
@@ -283,6 +277,9 @@ classes = (
     FastMaterialOperator,
     ExampleAddonPreferences,
     FastMaterialsPreferences,
+    MT_Preset_UE_ORM,
+    MT_PresetsMenu,
+    MT_Preset_UE_RMA,
 )
 
 def register():
