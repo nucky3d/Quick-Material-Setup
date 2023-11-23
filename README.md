@@ -1,5 +1,4 @@
-# Quick-Material-Setup-
-Blender addon for fast creation materials from textures.
+# Quick-Material-Setup
 Create material by one click from base color texture.
 ![Alt Text](readme/Timeline1.gif)
 Material controlls in N-panel
