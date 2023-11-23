@@ -1,4 +1,4 @@
-# Quick-Material-Setup-
+# Quick-Material-Setup
 Create material by one click from base color texture.
 ![Alt Text](readme/Timeline1.gif)
 Material controlls in N-panel
