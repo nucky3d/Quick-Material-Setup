@@ -5,7 +5,7 @@ bl_info = {
     "location": "Properties > Material",
     "description": "Quickly import textures as materials",
     "author": "Nucky3d",
-    "version": (1, 2),
+    "version": (1, 3),
     "support": "COMMUNITY",
     "wiki_url": "https://github.com/nucky3d/Quick-Material-Setup-",
 }
