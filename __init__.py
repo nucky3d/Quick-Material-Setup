@@ -167,7 +167,7 @@ class FastMaterialOperator(Operator, ImportHelper):
     # filename_ext = '.tga'
     filter_glob: StringProperty(
         default='*_BC*',
-        # options={'HIDDEN'}
+        options={'HIDDEN'}
     )
     def execute(self, context):
         global texture_basecolor_path
@@ -185,6 +185,7 @@ class FastMaterialOperator(Operator, ImportHelper):
             texture_basecolor_name = texture_basecolor_name.removesuffix(suffix[i-1])
         print(texture_basecolor_name)
         bpy.ops.object.setup_fast_material_operator('INVOKE_DEFAULT') 
+        bpy.ops.file.make_paths_relative()
         return {'FINISHED'}
     
 
